@@ -1,4 +1,4 @@
-![CI](https://github.com/Yojimbooy/VocaNar/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/Yojimbooy/VocNar/actions/workflows/ci.yml/badge.svg)
 
 # ️ VocNar
 
