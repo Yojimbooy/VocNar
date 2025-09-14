@@ -1,4 +1,4 @@
-![CI](https://github.com/<ton-user>/VocaNar/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/Yojimbooy/VocaNar/actions/workflows/ci.yml/badge.svg)
 
 # ️ VocNar
 
@@ -92,4 +92,4 @@ Idées, issues et retours sont aussi appréciés.
 
 ##  Licence
 
-[MIT](LICENSE) — libre utilisation et partage.
+[MIT](LICENCE.md) — libre utilisation et partage.
