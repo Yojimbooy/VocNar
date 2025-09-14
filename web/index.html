@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VocNar</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main>
+    <h1> Voice MJ</h1>
+
+    <section class="panel">
+      <label>Nombre de joueurs
+        <input id="players" type="number" min="1" max="6" value="3">
+      </label>
+
+      <label>Noms des personnages
+        <input id="names" type="text" placeholder="Alice; Bob; Charly">
+      </label>
+
+      <label>Type de scénario
+        <select id="genre">
+          <option>fantastique</option>
+          <option>enquete</option>
+          <option>medieval</option>
+          <option>policier</option>
+        </select>
+      </label>
+
+      <label>Durée (minutes)
+        <input id="duration" type="number" min="5" max="120" value="20">
+      </label>
+
+      <button id="start">Lancer la partie</button>
+    </section>
+
+    <section class="panel">
+      <div id="log"></div>
+      <div class="reply">
+        <input id="replyText" type="text" placeholder="Répondez ici (v0.1)">
+        <button id="sendReply">Envoyer</button>
+        <button id="ptt">Parler (bientôt)</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="main.js"></script>
+</body>
+</html>

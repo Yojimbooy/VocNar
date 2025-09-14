@@ -1,0 +1,14 @@
+:root { font-family: system-ui, sans-serif; }
+body { margin: 0; background: #0b0f14; color: #d7e1ee; }
+main { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+h1 { margin-bottom: 1rem; }
+.panel { background: #121826; border: 1px solid #1f2a3a; border-radius: 14px; padding: 1rem; margin-bottom: 1rem; }
+label { display: block; margin: .5rem 0; }
+input, select, button { padding: .6rem .8rem; border-radius: 10px; border: 1px solid #2a3a52; background: #0f1722; color: #e6eefb; }
+button { cursor: pointer; }
+#log { min-height: 200px; white-space: pre-wrap; }
+.msg { padding: .4rem .6rem; margin: .3rem 0; border-left: 3px solid #2a86ff; background: #0f1522; }
+.msg.mj { border-color: #8aa1ff; }
+.msg.player { border-color: #7bd389; }
+.reply { display: flex; gap: .5rem; margin-top: .5rem; }
+.reply input { flex: 1; }

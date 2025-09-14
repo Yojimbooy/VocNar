@@ -1,0 +1,15 @@
+{
+  "genres": ["fantastique", "enquete", "medieval", "policier"],
+  "blueprint": [
+    {"id": "intro", "prompt": "Vous arrivez {lieu}. {accroche} Que faites-vous ?"},
+    {"id": "scene1", "prompt": "Alors que {evenement}, une opportunité se présente. Qui agit et comment ?"},
+    {"id": "scene2", "prompt": "Une conséquence inattendue survient: {consequence}. Comment réagissez-vous ?"},
+    {"id": "final", "prompt": "Le dénouement approche. Quelle est votre dernière action décisive ?"}
+  ],
+  "fragments": {
+    "lieu": ["au pied d'une tour en ruines", "dans une ruelle embrumée", "dans une taverne bondée"],
+    "accroche": ["Un murmure circule au sujet d'un artefact perdu.", "Une silhouette vous observe depuis l'ombre."],
+    "evenement": ["un cri retentit", "la lumière vacille", "un mécanisme claque"],
+    "consequence": ["un passage secret s'ouvre", "un piège se déclenche", "un allié se révèle hostile"]
+  }
+}
