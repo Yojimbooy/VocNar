@@ -92,4 +92,4 @@ Idées, issues et retours sont aussi appréciés.
 
 ##  Licence
 
-[MIT](LICENCE.md) — libre utilisation et partage.
+[MIT](https://github.com/Yojimbooy/VocNar/blob/main/LICENSE.md) — libre utilisation et partage.
