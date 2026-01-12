@@ -3,6 +3,77 @@ const logEl = document.getElementById("log");
 const startBtn = document.getElementById("start");
 const sendBtn = document.getElementById("sendReply");
 const replyInput = document.getElementById("replyText");
+const pttBtn = document.getElementById("ptt");
+
+// STT (Speech-to-Text) via Whisper (backend local)
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+
+async function initMicrophone() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+
+    mediaRecorder.ondataavailable = (e) => {
+      audioChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = async () => {
+      pttBtn.textContent = "⏳ Transcription...";
+      const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+      audioChunks = [];
+
+      // Envoyer au backend pour transcription
+      const formData = new FormData();
+      formData.append("audio", audioBlob, "audio.webm");
+
+      try {
+        const resp = await fetch("/transcribe", { method: "POST", body: formData });
+        const data = await resp.json();
+        if (data.text) {
+          replyInput.value = data.text;
+          console.log("Transcription:", data.text);
+          // Envoyer automatiquement
+          setTimeout(() => sendBtn.click(), 200);
+        }
+      } catch (err) {
+        console.error("Erreur transcription:", err);
+        addMsg("⚠️ Erreur lors de la transcription.", "mj");
+      }
+
+      pttBtn.textContent = "🎤 Parler";
+      pttBtn.style.background = "";
+      isRecording = false;
+    };
+
+    console.log("Microphone initialisé");
+    return true;
+  } catch (err) {
+    console.error("Erreur micro:", err);
+    addMsg("⚠️ Impossible d'accéder au microphone.", "mj");
+    return false;
+  }
+}
+
+function toggleRecording() {
+  if (!mediaRecorder) {
+    initMicrophone().then(ok => { if (ok) toggleRecording(); });
+    return;
+  }
+
+  if (isRecording) {
+    mediaRecorder.stop();
+    isRecording = false;
+  } else {
+    audioChunks = [];
+    mediaRecorder.start();
+    isRecording = true;
+    pttBtn.textContent = "🔴 Écoute...";
+    pttBtn.style.background = "#5a2a2a";
+    console.log("Enregistrement démarré");
+  }
+}
 
 function say(text) {
   const u = new SpeechSynthesisUtterance(text);
@@ -76,7 +147,7 @@ sendBtn.addEventListener("click", () => {
   addMsg(txt, "player");
   replyInput.value = "";
 
-  // v0.1 : mini “résolveur” (pseudo dé)
+  // v0.1 : mini "résolveur" (pseudo dé)
   const roll = Math.floor(Math.random()*20)+1;
   const outcome = roll >= 12 ? "Ça passe ! L'action réussit." : "Hmm… échec partiel, une complication surgit.";
   const bridge = `${outcome} (d20=${roll}).`;
@@ -84,3 +155,6 @@ sendBtn.addEventListener("click", () => {
 
   setTimeout(nextBeat, 800);
 });
+
+// Push-to-Talk : clic pour démarrer/arrêter l'enregistrement
+pttBtn.addEventListener("click", toggleRecording);

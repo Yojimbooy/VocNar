@@ -1,14 +1,14 @@
 ![CI](https://github.com/Yojimbooy/VocNar/actions/workflows/ci.yml/badge.svg)
 
-# ️ VocNar
+# VocNar
 
 *Vocal Narrator — un maître du jeu qui parle !*
 
-VocaNar est un prototype d’interface narrative interactive :  
+VocNar est un prototype d'interface narrative interactive :
 
-- Les joueurs et joueuses définissent leurs personnages, le type de scénario et la durée de la partie.  
-- Un narrateur vocal (MJ) conte l’aventure à voix haute.  
-- Les joueurs et joueuses répondent via une zone de texte (micro et reconnaissance vocale arrivent bientôt).  
+- Les joueurs et joueuses définissent leurs personnages, le type de scénario et la durée de la partie.
+- Un narrateur vocal (MJ) conte l'aventure à voix haute.
+- Les joueurs et joueuses répondent via texte ou **reconnaissance vocale** (Whisper en local).
 - À chaque choix, le scénario évolue et le MJ rebondit.
 
 ---
@@ -18,7 +18,14 @@ VocaNar est un prototype d’interface narrative interactive :
 ### Prérequis
 
 - Python **3.9+**
-- [Uvicorn](https://www.uvicorn.org/) & [FastAPI](https://fastapi.tiangolo.com/) (normalement déjà listés dans `backend/requirements.txt`)
+- **ffmpeg** (requis par Whisper pour le traitement audio)
+  ```bash
+  # macOS
+  brew install ffmpeg
+  # Ubuntu/Debian
+  sudo apt install ffmpeg
+  ```
+- [Uvicorn](https://www.uvicorn.org/) & [FastAPI](https://fastapi.tiangolo.com/) (dans `backend/requirements.txt`)
 
 ### Étapes
 
@@ -55,30 +62,33 @@ VocaNar est un prototype d’interface narrative interactive :
 
 ---
 
-##  Utilisation
+## Utilisation
 
 1. Choisis :
-   - Nombre de joueurs  
-   - Noms des personnages  
-   - Type de scénario (fantastique / enquête / médiéval / policier)  
-   - Durée de la partie  
+   - Nombre de joueurs
+   - Noms des personnages
+   - Type de scénario (fantastique / enquête / médiéval / policier)
+   - Durée de la partie
 
-2. Clique sur **Lancer la partie**.  
-3. Le narrateur vocal (`speechSynthesis` du navigateur) raconte l’histoire.  
-4. Les joueurs répondent dans la zone de texte.  
+2. Clique sur **Lancer la partie**.
+3. Le narrateur vocal (`speechSynthesis` du navigateur) raconte l'histoire.
+4. Les joueurs répondent :
+   - Via la zone de texte, ou
+   - En cliquant sur **Parler** (reconnaissance vocale via Whisper)
 5. Le MJ réagit et propose la scène suivante.  
 
 ---
 
-##  Prévisions  (MVP → futur)
+## Prévisions (MVP -> futur)
 
-- [ ] Jets de dés 
-- [ ] Push-to-talk (micro)
-- [ ] Reconnaissance vocale (Whisper STT)
+- [x] Jets de dés (d20 basique)
+- [x] Push-to-talk (micro)
+- [x] Reconnaissance vocale (Whisper STT en local)
 - [ ] Narration TTS plus réaliste (Piper / ElevenLabs)
-- [ ] Automate d’états (intro → dilemme → climax → épilogue)
+- [ ] Système de jeu amélioré (difficulté contextuelle)
+- [ ] Automate d'états (intro -> dilemme -> climax -> épilogue)
 - [ ] Cartes (SVG/Canvas, PNJ, lieux)
-- [ ] Effets sonores et musiques d’ambiance
+- [ ] Effets sonores et musiques d'ambiance
 - [ ] Mode multi-joueurs
 
 ---
