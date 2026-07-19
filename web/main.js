@@ -1,11 +1,101 @@
-// v0.1 : TTS via speechSynthesis + boucle de scènes côté front
+// v0.2 : narration générée côté backend (API Claude) ; le front affiche, lit en TTS et envoie les actions
 const logEl = document.getElementById("log");
 const startBtn = document.getElementById("start");
 const sendBtn = document.getElementById("sendReply");
 const replyInput = document.getElementById("replyText");
 const pttBtn = document.getElementById("ptt");
 
-// STT (Speech-to-Text) via Whisper (backend local)
+function say(text) {
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "fr-FR";
+  speechSynthesis.speak(u);
+}
+
+function addMsg(text, who = "mj") {
+  const div = document.createElement("div");
+  div.className = `msg ${who}`;
+  div.textContent = (who === "mj" ? "MJ: " : "Joueur: ") + text;
+  logEl.appendChild(div);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function setBusy(busy) {
+  startBtn.disabled = busy;
+  sendBtn.disabled = busy;
+}
+
+function endGame() {
+  sendBtn.disabled = true;
+  replyInput.disabled = true;
+  pttBtn.disabled = true;
+}
+
+async function callGame(url, payload) {
+  setBusy(true);
+  try {
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      addMsg(`⚠️ ${err.detail || "Erreur serveur."}`, "mj");
+      return null;
+    }
+    return await resp.json();
+  } catch (e) {
+    addMsg("⚠️ Impossible de joindre le serveur.", "mj");
+    return null;
+  } finally {
+    setBusy(false);
+  }
+}
+
+function showTurn(data) {
+  if (data.jet) {
+    const j = data.jet;
+    addMsg(`🎲 d20 = ${j.d20} vs ${j.difficulte} — ${j.reussite ? "réussite !" : "échec…"} (${j.raison})`, "mj");
+  }
+  addMsg(data.texte, "mj");
+  say(data.texte);
+  if (data.fin) {
+    addMsg("🏁 La partie est terminée. Relance une partie pour rejouer.", "mj");
+    endGame();
+  }
+}
+
+startBtn.addEventListener("click", async () => {
+  logEl.innerHTML = "";
+  sendBtn.disabled = false;
+  replyInput.disabled = false;
+  pttBtn.disabled = false;
+
+  const names = (document.getElementById("names").value || "Alice; Bob; Charly")
+    .split(";")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const payload = {
+    players: parseInt(document.getElementById("players").value, 10),
+    names,
+    genre: document.getElementById("genre").value,
+    duration: parseInt(document.getElementById("duration").value, 10),
+  };
+  addMsg("Le MJ prépare la partie…", "mj");
+  const data = await callGame("/game/start", payload);
+  if (data) showTurn(data);
+});
+
+sendBtn.addEventListener("click", async () => {
+  const txt = replyInput.value.trim();
+  if (!txt) return;
+  addMsg(txt, "player");
+  replyInput.value = "";
+  const data = await callGame("/game/action", { text: txt });
+  if (data) showTurn(data);
+});
+
+// --- Push-to-talk (Whisper) : inchangé depuis la v0.1 ---
 let mediaRecorder = null;
 let audioChunks = [];
 let isRecording = false;
@@ -24,7 +114,6 @@ async function initMicrophone() {
       const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
       audioChunks = [];
 
-      // Envoyer au backend pour transcription
       const formData = new FormData();
       formData.append("audio", audioBlob, "audio.webm");
 
@@ -33,12 +122,9 @@ async function initMicrophone() {
         const data = await resp.json();
         if (data.text) {
           replyInput.value = data.text;
-          console.log("Transcription:", data.text);
-          // Envoyer automatiquement
           setTimeout(() => sendBtn.click(), 200);
         }
       } catch (err) {
-        console.error("Erreur transcription:", err);
         addMsg("⚠️ Erreur lors de la transcription.", "mj");
       }
 
@@ -47,10 +133,8 @@ async function initMicrophone() {
       isRecording = false;
     };
 
-    console.log("Microphone initialisé");
     return true;
   } catch (err) {
-    console.error("Erreur micro:", err);
     addMsg("⚠️ Impossible d'accéder au microphone.", "mj");
     return false;
   }
@@ -58,7 +142,9 @@ async function initMicrophone() {
 
 function toggleRecording() {
   if (!mediaRecorder) {
-    initMicrophone().then(ok => { if (ok) toggleRecording(); });
+    initMicrophone().then((ok) => {
+      if (ok) toggleRecording();
+    });
     return;
   }
 
@@ -71,90 +157,7 @@ function toggleRecording() {
     isRecording = true;
     pttBtn.textContent = "🔴 Écoute...";
     pttBtn.style.background = "#5a2a2a";
-    console.log("Enregistrement démarré");
   }
 }
 
-function say(text) {
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = "fr-FR";
-  speechSynthesis.speak(u);
-}
-
-function addMsg(text, who="mj") {
-  const div = document.createElement("div");
-  div.className = `msg ${who}`;
-  div.textContent = (who === "mj" ? "MJ: " : "Joueur: ") + text;
-  logEl.appendChild(div);
-  logEl.scrollTop = logEl.scrollHeight;
-}
-
-function randomPick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
-
-const FRAG = {
-  lieu: ["au pied d'une tour en ruines", "dans une ruelle embrumée", "dans une taverne bondée"],
-  accroche: ["Un murmure circule au sujet d'un artefact perdu.", "Une silhouette vous observe depuis l'ombre."],
-  evenement: ["un cri retentit", "la lumière vacille", "un mécanisme claque"],
-  consequence: ["un passage secret s'ouvre", "un piège se déclenche", "un allié se révèle hostile"]
-};
-
-const BLUEPRINT = [
-  {id: "intro", prompt: "Vous arrivez {lieu}. {accroche} Que faites-vous ?"},
-  {id: "scene1", prompt: "Alors que {evenement}, une opportunité se présente. Qui agit et comment ?"},
-  {id: "scene2", prompt: "Une conséquence inattendue survient: {consequence}. Comment réagissez-vous ?"},
-  {id: "final", prompt: "Le dénouement approche. Quelle est votre dernière action décisive ?"}
-];
-
-function render(tmpl) {
-  return tmpl
-    .replace("{lieu}", randomPick(FRAG.lieu))
-    .replace("{accroche}", randomPick(FRAG.accroche))
-    .replace("{evenement}", randomPick(FRAG.evenement))
-    .replace("{consequence}", randomPick(FRAG.consequence));
-}
-
-let beats = [];
-let idx = 0;
-
-function nextBeat() {
-  if (idx >= beats.length) {
-    const end = "Épilogue: Votre aventure touche à sa fin. Un dernier regard en arrière… et le rideau tombe.";
-    addMsg(end, "mj"); say(end); return;
-  }
-  const b = beats[idx++];
-  addMsg(b, "mj"); say(b);
-}
-
-startBtn.addEventListener("click", () => {
-  logEl.innerHTML = "";
-  idx = 0;
-
-  const players = document.getElementById("players").value;
-  const names = document.getElementById("names").value || "Alice; Bob; Charly";
-  const genre = document.getElementById("genre").value;
-  const duration = document.getElementById("duration").value;
-
-  const intro = `Bienvenue à tous (${players} joueurs): ${names}. Scénario ${genre}, durée cible ${duration} minutes.`;
-  addMsg(intro, "mj"); say(intro);
-
-  beats = BLUEPRINT.map(b => render(b.prompt));
-  setTimeout(nextBeat, 1200);
-});
-
-sendBtn.addEventListener("click", () => {
-  const txt = replyInput.value.trim();
-  if (!txt) return;
-  addMsg(txt, "player");
-  replyInput.value = "";
-
-  // v0.1 : mini "résolveur" (pseudo dé)
-  const roll = Math.floor(Math.random()*20)+1;
-  const outcome = roll >= 12 ? "Ça passe ! L'action réussit." : "Hmm… échec partiel, une complication surgit.";
-  const bridge = `${outcome} (d20=${roll}).`;
-  addMsg(bridge, "mj"); say(bridge);
-
-  setTimeout(nextBeat, 800);
-});
-
-// Push-to-Talk : clic pour démarrer/arrêter l'enregistrement
 pttBtn.addEventListener("click", toggleRecording);
