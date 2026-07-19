@@ -1,15 +1,14 @@
 {
-  "genres": ["fantastique", "enquete", "medieval", "policier"],
-  "blueprint": [
-    {"id": "intro", "prompt": "Vous arrivez {lieu}. {accroche} Que faites-vous ?"},
-    {"id": "scene1", "prompt": "Alors que {evenement}, une opportunité se présente. Qui agit et comment ?"},
-    {"id": "scene2", "prompt": "Une conséquence inattendue survient: {consequence}. Comment réagissez-vous ?"},
-    {"id": "final", "prompt": "Le dénouement approche. Quelle est votre dernière action décisive ?"}
-  ],
-  "fragments": {
-    "lieu": ["au pied d'une tour en ruines", "dans une ruelle embrumée", "dans une taverne bondée"],
-    "accroche": ["Un murmure circule au sujet d'un artefact perdu.", "Une silhouette vous observe depuis l'ombre."],
-    "evenement": ["un cri retentit", "la lumière vacille", "un mécanisme claque"],
-    "consequence": ["un passage secret s'ouvre", "un piège se déclenche", "un allié se révèle hostile"]
+  "genres": {
+    "fantastique": "un monde de magie sombre, de créatures anciennes et de mystères surnaturels",
+    "enquete": "une enquête à indices, témoins et fausses pistes, dans une ville pluvieuse",
+    "medieval": "un royaume médiéval de châteaux, d'intrigues de cour et de batailles",
+    "policier": "un polar urbain contemporain, entre commissariat, indics et courses-poursuites"
+  },
+  "phases": {
+    "intro": "Pose le décor, présente la situation initiale et implique chaque personnage nommé. Termine par une question du type « Que faites-vous ? »",
+    "scene": "Fais rebondir l'histoire selon la dernière action des joueurs : une complication, une rencontre ou une découverte. Termine par une question ou un choix.",
+    "climax": "C'est la scène décisive : monte la tension au maximum et confronte les joueurs à l'enjeu principal de l'histoire. Termine par une question ou un choix.",
+    "epilogue": "Conclus l'histoire en tenant compte de tout ce qui s'est passé. Résous les fils ouverts. Ne pose plus aucune question."
   }
 }
