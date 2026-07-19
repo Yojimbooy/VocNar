@@ -51,13 +51,24 @@ VocNar est un prototype d'interface narrative interactive :
    pip install -r backend/requirements.txt
    ```
 
-4. **Lancer le serveur**
+4. **Configurer la clé API Anthropic**
+
+   La narration est générée par l'API Claude (modèle Haiku). Crée `backend/.env` :
+
+   ```bash
+   cp backend/.env.example backend/.env
+   # puis édite backend/.env et colle ta clé ANTHROPIC_API_KEY
+   ```
+
+   Une partie coûte quelques centimes.
+
+5. **Lancer le serveur**
 
    ```bash
    uvicorn backend.app:app --reload --port 8000
    ```
 
-5. **Ouvrir le navigateur**
+6. **Ouvrir le navigateur**
     [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
 ---
@@ -75,7 +86,9 @@ VocNar est un prototype d'interface narrative interactive :
 4. Les joueurs répondent :
    - Via la zone de texte, ou
    - En cliquant sur **Parler** (reconnaissance vocale via Whisper)
-5. Le MJ réagit et propose la scène suivante.  
+5. Le MJ (API Claude) écrit chaque scène selon vos choix, juge la difficulté
+   des actions tentées (jet de d20 visible) et conclut l'histoire à la fin
+   de la durée choisie.  
 
 ---
 
@@ -85,8 +98,8 @@ VocNar est un prototype d'interface narrative interactive :
 - [x] Push-to-talk (micro)
 - [x] Reconnaissance vocale (Whisper STT en local)
 - [ ] Narration TTS plus réaliste (Piper / ElevenLabs)
-- [ ] Système de jeu amélioré (difficulté contextuelle)
-- [ ] Automate d'états (intro -> dilemme -> climax -> épilogue)
+- [x] Système de jeu amélioré (difficulté contextuelle)
+- [x] Automate d'états (intro -> dilemme -> climax -> épilogue)
 - [ ] Cartes (SVG/Canvas, PNJ, lieux)
 - [ ] Effets sonores et musiques d'ambiance
 - [ ] Mode multi-joueurs
