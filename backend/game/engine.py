@@ -1,19 +1,31 @@
-import json, random
-from pathlib import Path
+class GameState:
+    """État d'une partie : configuration, progression des scènes, historique des messages.
 
-DATA = json.loads((Path(__file__).parent / "scenes.json").read_text(encoding="utf-8"))
+    Aucun appel réseau ici : l'automate est testable à sec.
+    Phases : intro (index 0) -> scene (1..total-1) -> climax (total) -> epilogue (total+1).
+    """
 
-def render_prompt(tmpl: str) -> str:
-    def pick(key):
-        return random.choice(DATA["fragments"][key])
-    return (tmpl
-            .replace("{lieu}", pick("lieu"))
-            .replace("{accroche}", pick("accroche"))
-            .replace("{evenement}", pick("evenement"))
-            .replace("{consequence}", pick("consequence")))
+    def __init__(self, players: int, names: list, genre: str, duration: int):
+        self.players = players
+        self.names = names
+        self.genre = genre
+        self.duration = duration
+        self.total_scenes = max(2, duration // 5)
+        self.scene_index = 0
+        self.messages: list = []
 
-def generate_story_beats():
-    beats = []
-    for step in DATA["blueprint"]:
-        beats.append({"id": step["id"], "text": render_prompt(step["prompt"])})
-    return beats
+    def phase(self) -> str:
+        if self.scene_index == 0:
+            return "intro"
+        if self.scene_index < self.total_scenes:
+            return "scene"
+        if self.scene_index == self.total_scenes:
+            return "climax"
+        return "epilogue"
+
+    def advance(self) -> None:
+        self.scene_index += 1
+
+    @property
+    def finished(self) -> bool:
+        return self.scene_index > self.total_scenes + 1
