@@ -1,47 +1,97 @@
-from fastapi import FastAPI, WebSocket, UploadFile, File
-from fastapi.staticfiles import StaticFiles
+import os
+from pathlib import Path
+
+import anthropic
+from dotenv import load_dotenv
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pathlib import Path
-import json
-import tempfile
-import whisper
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
+
+from backend.game import narrator
+from backend.game.engine import GameState
+
+load_dotenv(Path(__file__).parent / ".env")
+if not os.environ.get("ANTHROPIC_API_KEY"):
+    raise RuntimeError(
+        "ANTHROPIC_API_KEY manquante : crée backend/.env avec ANTHROPIC_API_KEY=sk-ant-..."
+    )
 
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], allow_credentials=True,
-    allow_methods=["*"], allow_headers=["*"]
+    allow_methods=["*"], allow_headers=["*"],
 )
 
-# Charger le modèle Whisper (base = bon compromis vitesse/qualité)
-print("Chargement du modèle Whisper...")
-whisper_model = whisper.load_model("base")
-print("Modèle Whisper prêt.")
+# Une seule partie en mémoire (prototype mono-table)
+GAME: dict = {"state": None}
+
+
+class StartRequest(BaseModel):
+    players: int = Field(ge=1, le=6)
+    names: list
+    genre: str
+    duration: int = Field(ge=5, le=120)
+
+
+class ActionRequest(BaseModel):
+    text: str
+
+
+@app.post("/game/start")
+def game_start(req: StartRequest):
+    if req.genre not in narrator.DATA["genres"]:
+        raise HTTPException(status_code=422, detail=f"Genre inconnu : {req.genre}")
+    state = GameState(players=req.players, names=req.names, genre=req.genre, duration=req.duration)
+    try:
+        result = narrator.generate(state)
+    except anthropic.APIError:
+        raise HTTPException(status_code=503, detail="Le narrateur est indisponible, réessayez.")
+    GAME["state"] = state
+    state.advance()
+    return {"texte": result["texte"], "jet": None, "fin": False}
+
+
+@app.post("/game/action")
+def game_action(req: ActionRequest):
+    state = GAME["state"]
+    if state is None:
+        raise HTTPException(status_code=409, detail="Aucune partie en cours.")
+    if state.finished:
+        raise HTTPException(status_code=409, detail="La partie est terminée, relance une partie.")
+    try:
+        result = narrator.generate(state, req.text)
+    except anthropic.APIError:
+        raise HTTPException(status_code=503, detail="Le narrateur est indisponible, réessayez.")
+    state.advance()
+    return {"texte": result["texte"], "jet": result["jet"], "fin": state.finished}
+
+
+# --- Transcription Whisper (chargement paresseux : rien à l'import) ---
+_whisper_model = None
+
+
+def get_whisper_model():
+    global _whisper_model
+    if _whisper_model is None:
+        import whisper
+        _whisper_model = whisper.load_model("base")
+    return _whisper_model
+
 
 @app.post("/transcribe")
 async def transcribe_audio(audio: UploadFile = File(...)):
-    """Reçoit un fichier audio et retourne la transcription."""
+    import tempfile
     with tempfile.NamedTemporaryFile(suffix=".webm", delete=True) as tmp:
         content = await audio.read()
         tmp.write(content)
         tmp.flush()
-        result = whisper_model.transcribe(tmp.name, language="fr")
+        result = get_whisper_model().transcribe(tmp.name, language="fr")
     return JSONResponse({"text": result["text"].strip()})
 
-# Servir le front (doit être après les autres routes)
+
+# Le mount attrape toutes les routes restantes : il doit rester déclaré en DERNIER
 web_dir = Path(__file__).parent.parent / "web"
 app.mount("/", StaticFiles(directory=web_dir, html=True), name="web")
-
-@app.websocket("/ws")
-async def ws_endpoint(ws: WebSocket):
-    await ws.accept()
-    # Echo/dummy pour v0.1 : on peut déjà tester la boucle
-    try:
-        while True:
-            msg = await ws.receive_text()
-            # Ici, plus tard: router STT/intent/état → narration
-            reply = json.dumps({"type": "server-echo", "text": f"Reçu: {msg}"})
-            await ws.send_text(reply)
-    except Exception:
-        pass
