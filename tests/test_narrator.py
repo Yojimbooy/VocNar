@@ -125,3 +125,49 @@ def test_generate_erreur_ne_modifie_pas_l_historique(monkeypatch):
         narrator.generate(state, "Je fonce")
 
     assert state.messages == [{"role": "user", "content": "tour précédent"}]
+
+
+def test_parse_segments_sans_tag():
+    texte = "Vous arrivez au village. Que faites-vous ?"
+    assert narrator.parse_segments(texte) == [
+        {"locuteur": "narrateur", "texte": texte}
+    ]
+
+
+def test_parse_segments_narrateur_et_pnj():
+    texte = (
+        "[NARRATEUR] Le gardien surgit de l'ombre.\n"
+        "[PNJ:Le Gardien] Qui ose troubler mon repos ?\n"
+        "[NARRATEUR] Alice recule d'un pas."
+    )
+    assert narrator.parse_segments(texte) == [
+        {"locuteur": "narrateur", "texte": "Le gardien surgit de l'ombre."},
+        {"locuteur": "Le Gardien", "texte": "Qui ose troubler mon repos ?"},
+        {"locuteur": "narrateur", "texte": "Alice recule d'un pas."},
+    ]
+
+
+def test_parse_segments_contenu_avant_premier_tag():
+    texte = "Une brume s'installe.\n[PNJ:Voix] Approchez..."
+    assert narrator.parse_segments(texte) == [
+        {"locuteur": "narrateur", "texte": "Une brume s'installe."},
+        {"locuteur": "Voix", "texte": "Approchez..."},
+    ]
+
+
+def test_parse_segments_ignore_segments_vides():
+    texte = "[NARRATEUR][PNJ:Echo] Un cri résonne."
+    assert narrator.parse_segments(texte) == [
+        {"locuteur": "Echo", "texte": "Un cri résonne."},
+    ]
+
+
+def test_parse_segments_texte_vide():
+    assert narrator.parse_segments("") == []
+
+
+def test_prompt_systeme_contient_les_instructions_de_balisage():
+    state = GameState(players=1, names=["Zoé"], genre="policier", duration=15)
+    prompt = narrator.build_system_prompt(state)
+    assert "[NARRATEUR]" in prompt
+    assert "[PNJ:" in prompt

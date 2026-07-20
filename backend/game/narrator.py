@@ -1,5 +1,6 @@
 import json
 import random
+import re
 from pathlib import Path
 
 import anthropic
@@ -32,6 +33,36 @@ ROLL_TOOL = {
     },
 }
 
+_TAG_RE = re.compile(r"\[(NARRATEUR)\]|\[PNJ:([^\]]+)\]")
+
+
+def parse_segments(texte: str) -> list:
+    """Découpe un texte balisé en segments {locuteur, texte}.
+
+    Sans balise reconnue, tout le texte devient un seul segment narrateur
+    (dégradation silencieuse si le LLM oublie le format).
+    """
+    matches = list(_TAG_RE.finditer(texte))
+    if not matches:
+        contenu = texte.strip()
+        return [{"locuteur": "narrateur", "texte": contenu}] if contenu else []
+
+    segments = []
+    tete = texte[: matches[0].start()].strip()
+    if tete:
+        segments.append({"locuteur": "narrateur", "texte": tete})
+
+    for i, m in enumerate(matches):
+        start = m.end()
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(texte)
+        contenu = texte[start:end].strip()
+        if not contenu:
+            continue
+        locuteur = "narrateur" if m.group(1) else m.group(2).strip()
+        segments.append({"locuteur": locuteur, "texte": contenu})
+    return segments
+
+
 _client = None
 
 
@@ -52,7 +83,13 @@ def build_system_prompt(state) -> str:
         f"Personnages joueurs : {noms} ({state.players} joueur(s)).\n"
         f"Consigne pour cette scène : {phase_dir}\n"
         "Réponds en 3 à 5 phrases : ton texte est lu à voix haute par un narrateur vocal.\n"
-        "Utilise l'outil roll_d20 seulement quand un joueur tente une action à l'issue incertaine."
+        "Utilise l'outil roll_d20 seulement quand un joueur tente une action à l'issue incertaine.\n"
+        "Structure ta réponse en balisant chaque segment : fais précéder chaque passage de "
+        "narration par [NARRATEUR] et chaque réplique d'un PNJ par [PNJ:Nom du PNJ]. "
+        "N'utilise jamais de guillemets pour les dialogues, seulement ce balisage. Exemple :\n"
+        "[NARRATEUR] Le gardien surgit de l'ombre, son regard perçant les ténèbres.\n"
+        "[PNJ:Le Gardien] Qui ose troubler mon repos ?\n"
+        "[NARRATEUR] Alice recule d'un pas, la main sur son épée."
     )
 
 
