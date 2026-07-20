@@ -159,4 +159,4 @@ def generate(state, player_text=None):
             messages.pop(0)
 
     state.messages[:] = messages
-    return {"texte": texte, "jet": jet}
+    return {"segments": parse_segments(texte), "jet": jet}

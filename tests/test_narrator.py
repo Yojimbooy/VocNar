@@ -63,7 +63,10 @@ def test_generate_sans_jet(monkeypatch):
 
     result = narrator.generate(state)
 
-    assert result == {"texte": "Vous arrivez au village.", "jet": None}
+    assert result == {
+        "segments": [{"locuteur": "narrateur", "texte": "Vous arrivez au village."}],
+        "jet": None,
+    }
     assert len(fake.calls) == 1
     assert fake.calls[0]["model"] == "claude-haiku-4-5"
     # l'historique est committé : question du joueur + réponse du MJ
@@ -83,7 +86,9 @@ def test_generate_avec_jet(monkeypatch):
 
     result = narrator.generate(state, "Je crochette la serrure")
 
-    assert result["texte"] == "Le pêne cède dans un cliquetis."
+    assert result["segments"] == [
+        {"locuteur": "narrateur", "texte": "Le pêne cède dans un cliquetis."}
+    ]
     assert result["jet"] == {"d20": 17, "difficulte": 14, "reussite": True, "raison": "serrure complexe"}
     # le second appel interdit un nouveau jet et transmet le tool_result
     assert fake.calls[1]["tool_choice"] == {"type": "none"}
@@ -171,3 +176,21 @@ def test_prompt_systeme_contient_les_instructions_de_balisage():
     prompt = narrator.build_system_prompt(state)
     assert "[NARRATEUR]" in prompt
     assert "[PNJ:" in prompt
+
+
+def test_generate_segments_avec_pnj(monkeypatch):
+    texte_llm = "[NARRATEUR] Le vent siffle.\n[PNJ:Ombre] Approche...\n"
+    fake = FakeClient([
+        SimpleNamespace(stop_reason="end_turn", content=[text_block(texte_llm)]),
+    ])
+    monkeypatch.setattr(narrator, "get_client", lambda: fake)
+    state = GameState(players=1, names=["Zoé"], genre="fantastique", duration=15)
+
+    result = narrator.generate(state)
+
+    assert result["segments"] == [
+        {"locuteur": "narrateur", "texte": "Le vent siffle."},
+        {"locuteur": "Ombre", "texte": "Approche..."},
+    ]
+    # l'historique conserve le texte brut avec balises, pour la cohérence du LLM d'un tour à l'autre
+    assert state.messages[-1] == {"role": "assistant", "content": texte_llm.strip()}
