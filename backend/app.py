@@ -51,7 +51,7 @@ def game_start(req: StartRequest):
         raise HTTPException(status_code=503, detail="Le narrateur est indisponible, réessayez.")
     GAME["state"] = state
     state.advance()
-    return {"texte": result["texte"], "jet": None, "fin": False}
+    return {"segments": result["segments"], "jet": None, "fin": False}
 
 
 @app.post("/game/action")
@@ -66,7 +66,7 @@ def game_action(req: ActionRequest):
     except anthropic.APIError:
         raise HTTPException(status_code=503, detail="Le narrateur est indisponible, réessayez.")
     state.advance()
-    return {"texte": result["texte"], "jet": result["jet"], "fin": state.finished}
+    return {"segments": result["segments"], "jet": result["jet"], "fin": state.finished}
 
 
 # --- Transcription Whisper (chargement paresseux : rien à l'import) ---

@@ -19,7 +19,10 @@ def partie_vierge():
 
 
 def fake_generate(state, player_text=None):
-    return {"texte": "Il était une fois.", "jet": None}
+    return {
+        "segments": [{"locuteur": "narrateur", "texte": "Il était une fois."}],
+        "jet": None,
+    }
 
 
 def test_import_app_ne_charge_pas_whisper():
@@ -30,7 +33,11 @@ def test_start_cree_une_partie(monkeypatch):
     monkeypatch.setattr(app_module.narrator, "generate", fake_generate)
     resp = client.post("/game/start", json=START_PAYLOAD)
     assert resp.status_code == 200
-    assert resp.json() == {"texte": "Il était une fois.", "jet": None, "fin": False}
+    assert resp.json() == {
+        "segments": [{"locuteur": "narrateur", "texte": "Il était une fois."}],
+        "jet": None,
+        "fin": False,
+    }
     assert app_module.GAME["state"].phase() == "scene"
 
 
