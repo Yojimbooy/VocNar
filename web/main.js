@@ -1,20 +1,47 @@
-// v0.2 : narration générée côté backend (API Claude) ; le front affiche, lit en TTS et envoie les actions
+// v0.3 : voix distinctes narrateur / PNJ via les voix système du navigateur
 const logEl = document.getElementById("log");
 const startBtn = document.getElementById("start");
 const sendBtn = document.getElementById("sendReply");
 const replyInput = document.getElementById("replyText");
 const pttBtn = document.getElementById("ptt");
 
-function say(text) {
+let frenchVoices = [];
+let narratorVoice = null;
+
+function loadVoices() {
+  frenchVoices = speechSynthesis.getVoices().filter((v) => v.lang.startsWith("fr"));
+  narratorVoice = frenchVoices.find((v) => v.name === "Thomas") || frenchVoices[0] || null;
+}
+loadVoices();
+speechSynthesis.onvoiceschanged = loadVoices;
+
+function hashString(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) {
+    h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  }
+  return h;
+}
+
+function voiceFor(locuteur) {
+  if (locuteur === "narrateur" || frenchVoices.length === 0) return narratorVoice;
+  const pool = frenchVoices.filter((v) => v !== narratorVoice);
+  if (pool.length === 0) return narratorVoice;
+  return pool[hashString(locuteur) % pool.length];
+}
+
+function say(text, voice) {
   const u = new SpeechSynthesisUtterance(text);
   u.lang = "fr-FR";
+  if (voice) u.voice = voice;
   speechSynthesis.speak(u);
 }
 
-function addMsg(text, who = "mj") {
+function addMsg(text, who = "mj", label = null) {
   const div = document.createElement("div");
   div.className = `msg ${who}`;
-  div.textContent = (who === "mj" ? "MJ: " : "Joueur: ") + text;
+  const prefixe = label || (who === "mj" ? "MJ" : "Joueur");
+  div.textContent = `${prefixe}: ${text}`;
   logEl.appendChild(div);
   logEl.scrollTop = logEl.scrollHeight;
 }
@@ -57,8 +84,11 @@ function showTurn(data) {
     const j = data.jet;
     addMsg(`🎲 d20 = ${j.d20} vs ${j.difficulte} — ${j.reussite ? "réussite !" : "échec…"} (${j.raison})`, "mj");
   }
-  addMsg(data.texte, "mj");
-  say(data.texte);
+  for (const segment of data.segments) {
+    const label = segment.locuteur === "narrateur" ? null : segment.locuteur;
+    addMsg(segment.texte, "mj", label);
+    say(segment.texte, voiceFor(segment.locuteur));
+  }
   if (data.fin) {
     addMsg("🏁 La partie est terminée. Relance une partie pour rejouer.", "mj");
     endGame();
