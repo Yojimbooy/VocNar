@@ -51,7 +51,7 @@ def game_start(req: StartRequest):
         raise HTTPException(status_code=503, detail="Le narrateur est indisponible, réessayez.")
     GAME["state"] = state
     state.advance()
-    return {"segments": result["segments"], "jet": None, "fin": False}
+    return {"segments": result["segments"], "jet": result["jet"], "fin": False}
 
 
 @app.post("/game/action")

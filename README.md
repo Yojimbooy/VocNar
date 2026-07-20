@@ -82,7 +82,8 @@ VocNar est un prototype d'interface narrative interactive :
    - Durée de la partie
 
 2. Clique sur **Lancer la partie**.
-3. Le narrateur vocal (`speechSynthesis` du navigateur) raconte l'histoire.
+3. Le narrateur vocal (`speechSynthesis` du navigateur) raconte l'histoire, avec
+   une voix distincte pour chaque PNJ que le MJ fait parler (effet livre audio).
 4. Les joueurs répondent :
    - Via la zone de texte, ou
    - En cliquant sur **Parler** (reconnaissance vocale via Whisper)
@@ -99,7 +100,8 @@ VocNar est un prototype d'interface narrative interactive :
 - [x] Reconnaissance vocale (Whisper STT en local)
 - [ ] Narration TTS plus réaliste (Piper / ElevenLabs)
 - [x] Système de jeu amélioré (difficulté contextuelle)
-- [x] Automate d'états (intro -> dilemme -> climax -> épilogue)
+- [x] Automate d'états (intro -> scènes -> climax -> épilogue)
+- [x] Voix distinctes narrateur / PNJ (voix système du navigateur)
 - [ ] Cartes (SVG/Canvas, PNJ, lieux)
 - [ ] Effets sonores et musiques d'ambiance
 - [ ] Mode multi-joueurs
